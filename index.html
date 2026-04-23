@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Roy's 👑 Fidelidade</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root {
+  --am: #F7B918; --am2: #d49a00;
+  --vm: #E82329; --az: #0E68AF;
+  --pr: #0A0A0A; --c1: #141414; --c2: #1C1C1C;
+  --bd: #252525; --cz: #888; --br: #F5F5F5;
+  --vd: #2ECC71; --sh: 0 12px 40px rgba(0,0,0,.4);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Nunito',sans-serif;background:var(--pr);min-height:100vh;color:var(--br);overflow-x:hidden}
+
+/* TOPO */
+.topo{background:linear-gradient(90deg,#0A0A0A,#111);border-bottom:2px solid var(--am);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:50}
+.logo{font-family:'Bebas Neue',cursive;font-size:1.8rem;letter-spacing:3px}
+.logo em{color:var(--am);font-style:normal}.logo s{color:var(--vm);text-decoration:none}
+.nav{display:flex;gap:6px}
+.nb{padding:7px 14px;border-radius:8px;border:1.5px solid var(--bd);background:transparent;color:var(--cz);font-family:'Nunito',sans-serif;font-weight:800;font-size:0.78rem;cursor:pointer;transition:all .15s}
+.nb:hover{border-color:var(--am);color:var(--am)}.nb.on{background:var(--am);color:var(--pr);border-color:var(--am)}
+
+/* MAIN */
+.main{display:flex;align-items:flex-start;justify-content:center;padding:28px 16px 48px;min-height:calc(100vh - 60px)}
+.tela{display:none;width:100%;max-width:460px;flex-direction:column;gap:16px}
+.tela.on{display:flex}.tela-w{max-width:880px}
+
+/* CARD */
+.card{background:var(--c1);border-radius:18px;border:1px solid var(--bd);padding:24px;box-shadow:var(--sh)}
+.ct{font-family:'Bebas Neue',cursive;font-size:1.5rem;color:var(--am);letter-spacing:1.5px;line-height:1;margin-bottom:4px}
+.cs{font-size:0.82rem;color:var(--cz);margin-bottom:16px}
+
+/* FIELD */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:0.72rem;font-weight:800;color:#777;text-transform:uppercase;letter-spacing:.8px}
+.field input,.field select{background:#0D0D0D;border:1.5px solid var(--bd);border-radius:10px;padding:13px 15px;font-size:1rem;font-family:'Nunito',sans-serif;font-weight:700;color:var(--br);outline:none;transition:border-color .2s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--am)}
+.field input::placeholder{color:#333;font-weight:400}
+
+/* BTN */
+.btn{display:block;width:100%;padding:14px 20px;border-radius:11px;border:none;font-family:'Bebas Neue',cursive;font-size:1.15rem;letter-spacing:1.2px;cursor:pointer;transition:all .15s;text-align:center}
+.btn+.btn{margin-top:8px}
+.by{background:var(--am);color:var(--pr)}.by:hover{background:var(--am2);transform:translateY(-1px)}
+.br2{background:var(--vm);color:#fff}.br2:hover{background:#c0171c}
+.bb{background:var(--az);color:#fff}
+.bg{background:transparent;border:1.5px solid var(--bd);color:var(--cz);font-family:'Nunito',sans-serif;font-weight:700;font-size:.9rem}
+.bg:hover{border-color:var(--am);color:var(--am)}
+.bsm{padding:8px 14px;font-size:.82rem;width:auto;border-radius:8px}
+
+/* QR */
+.qr-wrap{position:relative;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:1;border:2px solid var(--am)}
+.qr-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+.qr-mira{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.qr-mi{width:65%;height:65%;border-radius:12px;box-shadow:0 0 0 2000px rgba(0,0,0,.45);border:2px solid var(--am);position:relative}
+.qr-mi::before,.qr-mi::after{content:'';position:absolute;width:24px;height:24px;border-color:var(--am);border-style:solid}
+.qr-mi::before{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.qr-mi::after{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scan-line{position:absolute;left:8%;right:8%;height:2px;background:linear-gradient(90deg,transparent,var(--am),transparent);animation:scan 2s ease-in-out infinite;box-shadow:0 0 8px var(--am)}
+@keyframes scan{0%,100%{top:15%}50%{top:82%}}
+.qr-st{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:var(--am);font-size:.78rem;font-weight:800;padding:5px 14px;border-radius:50px;white-space:nowrap;letter-spacing:.5px}
+
+/* LOADING */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:16px}
+.spinner{width:48px;height:48px;border:3px solid #222;border-top-color:var(--am);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-family:'Bebas Neue',cursive;font-size:1.2rem;color:var(--am);letter-spacing:1px}
+.loading-sub{font-size:.8rem;color:var(--cz);text-align:center}
+
+/* PONTOS */
+.pts-card{background:linear-gradient(135deg,#141400,#1C1800);border:2px solid var(--am);border-radius:18px;padding:22px;text-align:center}
+.pts-nome{font-size:.95rem;font-weight:900;color:var(--br);margin-bottom:4px}
+.pts-num{font-family:'Bebas Neue',cursive;font-size:5rem;color:var(--am);line-height:1;text-shadow:0 0 40px rgba(247,185,24,.3)}
+.pts-label{font-size:.72rem;color:var(--cz);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.prog-wrap{margin:14px 0 6px}
+.prog-top{display:flex;justify-content:space-between;font-size:.75rem;color:var(--cz);margin-bottom:5px}
+.prog-bar{height:8px;background:#222;border-radius:50px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--am),var(--vm));border-radius:50px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.coroas{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-size:1rem}
+.coroa{opacity:.2;transition:opacity .3s,transform .3s}.coroa.on{opacity:1;transform:scale(1.15)}
+
+/* RESGATE */
+.resg-box{background:linear-gradient(135deg,#1A0A00,#220E00);border:2px solid var(--vm);border-radius:14px;padding:18px;text-align:center;margin-top:14px;animation:pulseb 2s ease-in-out infinite}
+@keyframes pulseb{0%,100%{border-color:var(--vm);box-shadow:0 0 0 0 rgba(232,35,41,0)}50%{border-color:#ff4444;box-shadow:0 0 14px 2px rgba(232,35,41,.3)}}
+.resg-t{font-family:'Bebas Neue',cursive;font-size:1.3rem;color:var(--vm);letter-spacing:1px}
+.resg-s{font-size:.8rem;color:#AAA;margin:3px 0 12px}
+
+/* HIST */
+.hist{display:flex;flex-direction:column;gap:7px;max-height:200px;overflow-y:auto}
+.hi{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:#0D0D0D;border-radius:9px;border:1px solid var(--bd)}
+.hi-loja{font-weight:800;font-size:.85rem;color:var(--br)}
+.hi-data{font-size:.72rem;color:var(--cz);margin-top:1px}
+.hi-pts{font-weight:900;font-size:.9rem}
+.pos{color:var(--vd)}.neg{color:var(--vm)}
+
+/* ALERTA */
+.al{border-radius:10px;padding:12px 15px;font-weight:700;font-size:.85rem;display:none;animation:sd .25s ease}
+@keyframes sd{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.al.ok{display:block;background:rgba(46,204,113,.12);color:var(--vd);border:1px solid rgba(46,204,113,.25)}
+.al.err{display:block;background:rgba(232,35,41,.1);color:#ff6b6b;border:1px solid rgba(232,35,41,.25)}
+.al.info{display:block;background:rgba(247,185,24,.08);color:var(--am);border:1px solid rgba(247,185,24,.2)}
+
+/* NFe PREVIEW */
+.nfe{background:#0D0D0D;border:1px solid var(--bd);border-radius:12px;padding:16px}
+.nfe-r{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #1A1A1A;font-size:.83rem}
+.nfe-r:last-child{border:none}
+.nfe-r .k{color:var(--cz);flex-shrink:0;margin-right:12px}
+.nfe-r .v{font-weight:800;color:var(--br);text-align:right}
+.bok{background:rgba(46,204,113,.15);color:var(--vd);padding:2px 9px;border-radius:50px;font-size:.7rem;font-weight:800}
+.berr{background:rgba(232,35,41,.15);color:var(--vm);padding:2px 9px;border-radius:50px;font-size:.7rem;font-weight:800}
+.bwarn{background:rgba(247,185,24,.15);color:var(--am);padding:2px 9px;border-radius:50px;font-size:.7rem;font-weight:800}
+
+/* STEPS */
+.steps{display:flex;gap:0;margin-bottom:20px}
+.step{flex:1;text-align:center;padding:8px 4px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--cz);border-bottom:2px solid var(--bd);transition:all .2s}
+.step.on{color:var(--am);border-bottom-color:var(--am)}.step.done{color:var(--vd);border-bottom-color:var(--vd)}
+
+/* MODAL PIN */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center}
+.ov.on{display:flex}
+.pin-box{background:var(--c1);border:2px solid var(--am);border-radius:22px;padding:30px 28px;width:320px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.pin-t{font-family:'Bebas Neue',cursive;font-size:1.5rem;color:var(--am);letter-spacing:1px}
+.pin-s{font-size:.8rem;color:var(--cz);margin:3px 0 18px}
+.pin-dots{display:flex;gap:10px;justify-content:center;margin-bottom:12px}
+.pd{width:14px;height:14px;border-radius:50%;background:#222;border:2px solid #444;transition:all .15s}
+.pd.on{background:var(--am);border-color:var(--am);box-shadow:0 0 8px rgba(247,185,24,.5)}
+.pin-err{text-align:center;font-size:.8rem;color:#ff6b6b;min-height:18px;margin-bottom:10px;font-weight:700}
+.teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.tecla{padding:15px;border-radius:11px;border:1.5px solid var(--bd);background:#0D0D0D;color:var(--br);font-family:'Bebas Neue',cursive;font-size:1.4rem;cursor:pointer;transition:all .1s;text-align:center;user-select:none}
+.tecla:hover{border-color:var(--am);color:var(--am)}.tecla:active{transform:scale(.93);background:#181818}
+.tdel{font-family:'Nunito',sans-serif;font-size:1.1rem;color:var(--vm)}
+.tcan{font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:800;color:var(--cz)}
+
+/* GESTOR */
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.st{background:var(--c1);border:1px solid var(--bd);border-radius:14px;padding:18px 14px;text-align:center}
+.stn{font-family:'Bebas Neue',cursive;font-size:2.4rem;color:var(--am);line-height:1}
+.stl{font-size:.72rem;color:var(--cz);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.tabs-g{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap}
+.tg{padding:7px 14px;border-radius:8px;background:#0D0D0D;border:1px solid var(--bd);color:var(--cz);font-weight:800;font-size:.78rem;cursor:pointer;transition:all .15s}
+.tg.on{background:var(--am);color:var(--pr);border-color:var(--am)}
+.tabela{width:100%;border-collapse:collapse;font-size:.83rem}
+.tabela th{background:#0D0D0D;padding:9px 12px;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--cz)}
+.tabela td{padding:10px 12px;border-bottom:1px solid #181818;color:#CCC}
+.tabela tr:hover td{background:#111}
+.badge{display:inline-block;padding:2px 9px;border-radius:50px;font-size:.7rem;font-weight:800}
+.bg2{background:rgba(46,204,113,.12);color:var(--vd)}
+.by2{background:rgba(247,185,24,.12);color:var(--am)}
+.br3{background:rgba(232,35,41,.12);color:var(--vm)}
+.bb2{background:rgba(14,104,175,.15);color:#5BA8E0}
+.filtro{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filtro input,.filtro select{background:#0D0D0D;border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:#CCC;font-family:'Nunito',sans-serif;font-size:.82rem;outline:none;flex:1;min-width:140px}
+.filtro input:focus,.filtro select:focus{border-color:var(--am)}
+.il{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bd);font-size:.83rem}
+.il:last-child{border:none}.il .k{color:var(--cz)}.il .v{font-weight:800;color:var(--br)}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:#0D0D0D}::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+
+/* HORA WARN */
+.hora-warn{background:linear-gradient(135deg,#0D0A00,#1A1200);border:1.5px solid var(--am);border-radius:12px;padding:14px 16px;margin-top:10px;font-size:.82rem;color:#CCC;text-align:center}
+.hora-warn strong{color:var(--am);font-size:1.1rem;display:block;font-family:'Bebas Neue',cursive;letter-spacing:1px;margin-bottom:2px}
+</style>
+</head>
+<body>
+
+<div class="topo">
+  <div class="logo"><em>Roy</em><s>'s</s> 👑</div>
+  <div class="nav">
+    <button class="nb on" onclick="ir('cliente')">👤 Cliente</button>
+    <button class="nb" onclick="irGestor()">📊 Gestor</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ══════ TELA CLIENTE ══════ -->
+<div class="tela on" id="tela-cliente">
+
+  <!-- STEP 1: CPF -->
+  <div class="card" id="s-cpf">
+    <div class="ct">👑 Área do Cliente</div>
+    <div class="cs">Digite seu CPF para consultar pontos ou se cadastrar</div>
+    <div class="steps">
+      <div class="step on">1. Identificação</div>
+      <div class="step">2. Cupom</div>
+      <div class="step">3. Pontos</div>
+    </div>
+    <div class="field">
+      <label>CPF</label>
+      <input id="cpf-in" type="text" placeholder="000.000.000-00" maxlength="14"
+        oninput="mkCPF(this)" onkeydown="if(event.key==='Enter')buscarCPF()"/>
+    </div>
+    <div id="al-cpf" class="al"></div>
+    <button class="btn by" onclick="buscarCPF()">CONTINUAR →</button>
+  </div>
+
+  <!-- STEP 1b: CADASTRO -->
+  <div class="card" id="s-cad" style="display:none">
+    <div class="ct">🆕 Primeiro Acesso</div>
+    <div class="cs">CPF não encontrado. Cadastre-se gratuitamente!</div>
+    <div class="field"><label>Nome completo</label><input id="cad-nome" type="text" placeholder="Seu nome"/></div>
+    <div class="field"><label>Telefone (opcional)</label><input id="cad-tel" type="text" placeholder="(98) 99999-9999" maxlength="15" oninput="mkTel(this)"/></div>
+    <div id="al-cad" class="al"></div>
+    <button class="btn by" onclick="cadastrar()">CADASTRAR 👑</button>
+    <button class="btn bg" onclick="hide('s-cad');show('s-cpf')">Voltar</button>
+  </div>
+
+  <!-- STEP 2: QR SCANNER -->
+  <div class="card" id="s-qr" style="display:none">
+    <div class="ct">📷 Escanear Cupom</div>
+    <div class="cs">Aponte para o QR Code do seu cupom fiscal Roy's</div>
+    <div class="steps">
+      <div class="step done">1. Identificação</div>
+      <div class="step on">2. Cupom</div>
+      <div class="step">3. Pontos</div>
+    </div>
+    <div class="qr-wrap">
+      <video id="qr-vid" playsinline muted></video>
+      <div class="qr-mira"><div class="qr-mi"><div class="scan-line"></div></div></div>
+      <div class="qr-st" id="qr-st">Buscando QR Code...</div>
+    </div>
+    <canvas id="qr-cv" style="display:none"></canvas>
+    <div id="al-qr" class="al" style="margin-top:12px;"></div>
+    <button class="btn bg" style="margin-top:12px;" onclick="pararCam();hide('s-qr');show('s-cpf')">← Voltar</button>
+  </div>
+
+  <!-- STEP 2b: VALIDANDO (loading) -->
+  <div class="card" id="s-loading" style="display:none">
+    <div class="steps">
+      <div class="step done">1. Identificação</div>
+      <div class="step on">2. Cupom</div>
+      <div class="step">3. Pontos</div>
+    </div>
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-txt">Validando na SEFAZ-MA</div>
+      <div class="loading-sub" id="load-sub">Consultando autenticidade do cupom fiscal...<br>Isso leva alguns segundos.</div>
+    </div>
+  </div>
+
+  <!-- STEP 3: CONFIRMAR NOTA -->
+  <div class="card" id="s-nota" style="display:none">
+    <div class="ct">🧾 Dados do Cupom</div>
+    <div class="cs">Verifique os dados antes de confirmar</div>
+    <div class="steps">
+      <div class="step done">1. Identificação</div>
+      <div class="step done">2. Cupom</div>
+      <div class="step on">3. Pontos</div>
+    </div>
+    <div class="nfe" id="nfe-dados"></div>
+    <div id="al-nota" class="al" style="margin-top:12px;"></div>
+    <button class="btn by" id="btn-pontuar" onclick="confirmarPts()" style="margin-top:14px;">✅ CONFIRMAR E PONTUAR 👑</button>
+    <button class="btn bg" onclick="recusar()">← Escanear outro cupom</button>
+  </div>
+
+  <!-- STEP 4: RESULTADO -->
+  <div class="card" id="s-res" style="display:none">
+    <div class="pts-card">
+      <div class="pts-nome" id="r-nome">—</div>
+      <div class="pts-num" id="r-pts">0</div>
+      <div class="pts-label">pontos acumulados</div>
+      <div class="prog-wrap">
+        <div class="prog-top"><span>Próximo prêmio</span><span id="r-ptxt">0/10</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="r-bar" style="width:0%"></div></div>
+        <div class="coroas" id="r-cor"></div>
+      </div>
+    </div>
+    <div class="resg-box" id="r-resg" style="display:none">
+      <div class="resg-t">🎁 PRÊMIO DISPONÍVEL!</div>
+      <div class="resg-s">Você tem pontos para resgatar 1 sub Smart grátis!</div>
+      <button class="btn br2 bsm" style="width:100%;margin-top:4px;" onclick="abrirResgate()">RESGATAR AGORA</button>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="ct" style="font-size:1rem;margin-bottom:8px;">📋 Últimas visitas</div>
+      <div class="hist" id="r-hist"></div>
+    </div>
+    <button class="btn bg" style="margin-top:14px;" onclick="sair()">← Sair</button>
+  </div>
+
+</div><!-- /tela-cliente -->
+
+<!-- ══════ TELA GESTOR ACESSO ══════ -->
+<div class="tela" id="tela-gestor-acesso">
+  <div class="card">
+    <div class="ct">📊 Painel do Gestor</div>
+    <div class="cs">Acesso restrito — apenas proprietário</div>
+    <button class="btn by" onclick="abrirPin('gestor')">ENTRAR COM SENHA 🔐</button>
+    <button class="btn bg" onclick="ir('cliente')">← Voltar</button>
+  </div>
+</div>
+
+<!-- ══════ TELA GESTOR ══════ -->
+<div class="tela tela-w" id="tela-gestor">
+  <div class="sg">
+    <div class="st"><div class="stn" id="st-c">0</div><div class="stl">Clientes</div></div>
+    <div class="st"><div class="stn" id="st-t">0</div><div class="stl">Compras Válidas</div></div>
+    <div class="st"><div class="stn" id="st-r">0</div><div class="stl">Prêmios</div></div>
+  </div>
+  <div class="tabs-g">
+    <button class="tg on" onclick="tabG('cli')">👥 Clientes</button>
+    <button class="tg" onclick="tabG('trans')">📋 Transações</button>
+    <button class="tg" onclick="tabG('ajuste')">⚙️ Ajuste</button>
+    <button class="tg" onclick="tabG('cfg')">🔑 Config</button>
+  </div>
+
+  <div class="card" id="tab-cli">
+    <div class="filtro">
+      <input type="text" placeholder="🔍 Nome ou CPF..." oninput="renderCli()" id="f-nome"/>
+      <select onchange="renderCli()" id="f-loja">
+        <option value="">Todas as lojas</option>
+        <option>Shopping da Ilha</option>
+        <option>Shopping São Luís</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="tabela">
+        <thead><tr><th>Nome</th><th>CPF</th><th>Pontos</th><th>Visitas</th><th>Última compra</th><th>Loja</th><th></th></tr></thead>
+        <tbody id="tb-cli"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="tab-trans" style="display:none">
+    <div style="overflow-x:auto;max-height:440px;overflow-y:auto;">
+      <table class="tabela">
+        <thead><tr><th>Data/Hora</th><th>Cliente</th><th>Chave NF-e</th><th>Hora cupom</th><th>Δ tempo</th><th>Pts</th><th>Loja</th><th>Status</th></tr></thead>
+        <tbody id="tb-trans"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="tab-ajuste" style="display:none">
+    <div class="ct" style="font-size:1.2rem">⚙️ Ajuste Manual</div>
+    <div class="cs">Toda alteração é auditada com log obrigatório.</div>
+    <div class="field"><label>CPF</label><input id="aj-cpf" type="text" placeholder="000.000.000-00" maxlength="14" oninput="mkCPF(this)"/></div>
+    <div class="field"><label>Pontos (negativo para remover)</label><input id="aj-pts" type="number" placeholder="Ex: 1 ou -1"/></div>
+    <div class="field"><label>Motivo obrigatório</label><input id="aj-mot" type="text" placeholder="Descreva o motivo detalhadamente"/></div>
+    <div id="al-aj" class="al"></div>
+    <button class="btn bb" onclick="aplicarAjuste()">APLICAR (requer senha do gestor)</button>
+  </div>
+
+  <div class="card" id="tab-cfg" style="display:none">
+    <div class="ct" style="font-size:1.2rem">🔑 Configurações</div>
+    <div class="cs">Regras do programa de fidelidade</div>
+    <div class="il"><span class="k">CNPJ da Roy's (validação fiscal)</span><span class="v" style="font-family:monospace;font-size:.85rem;">50324042000156</span></div>
+    <div class="il">
+      <span class="k">Janela de tempo do cupom</span>
+      <span class="v"><input id="cfg-h" type="number" value="1" min="1" max="24"
+        style="width:50px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 8px;color:#FFF;font-family:Nunito;font-weight:700;font-size:.9rem;"/> hora(s)</span>
+    </div>
+    <div class="il">
+      <span class="k">Pontos para prêmio</span>
+      <span class="v"><input id="cfg-m" type="number" value="10" min="1"
+        style="width:55px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 8px;color:#FFF;font-family:Nunito;font-weight:700;font-size:.9rem;"/></span>
+    </div>
+    <div class="il">
+      <span class="k">Valor mínimo para pontuar (R$)</span>
+      <span class="v"><input id="cfg-v" type="number" value="15" min="1"
+        style="width:65px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 8px;color:#FFF;font-family:Nunito;font-weight:700;font-size:.9rem;"/></span>
+    </div>
+    <div class="il">
+      <span class="k">Loja 1</span>
+      <span class="v"><input id="cfg-l1" type="text" value="Shopping da Ilha"
+        style="width:180px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 8px;color:#FFF;font-family:Nunito;font-weight:700;font-size:.9rem;"/></span>
+    </div>
+    <div class="il">
+      <span class="k">Loja 2</span>
+      <span class="v"><input id="cfg-l2" type="text" value="Shopping São Luís"
+        style="width:180px;background:#111;border:1px solid #333;border-radius:6px;padding:4px 8px;color:#FFF;font-family:Nunito;font-weight:700;font-size:.9rem;"/></span>
+    </div>
+    <div class="field" style="margin-top:16px;"><label>Nova senha do gestor (mín. 4 dígitos)</label><input id="cfg-pw" type="password" placeholder="Deixe em branco para manter" maxlength="8"/></div>
+    <div id="al-cfg" class="al"></div>
+    <button class="btn by" onclick="salvarCfg()">SALVAR CONFIGURAÇÕES</button>
+  </div>
+
+  <button class="btn bg" onclick="ir('cliente')">← Sair do Painel</button>
+</div>
+
+</div><!-- /main -->
+
+<!-- MODAL PIN -->
+<div class="ov" id="ov-pin">
+  <div class="pin-box">
+    <div class="pin-t" id="pin-t">🔐 Senha</div>
+    <div class="pin-s" id="pin-s">Digite sua senha de gestor</div>
+    <div class="pin-dots" id="pin-dots"></div>
+    <div class="pin-err" id="pin-err"></div>
+    <div class="teclado">
+      <div class="tecla" onclick="pk('1')">1</div><div class="tecla" onclick="pk('2')">2</div><div class="tecla" onclick="pk('3')">3</div>
+      <div class="tecla" onclick="pk('4')">4</div><div class="tecla" onclick="pk('5')">5</div><div class="tecla" onclick="pk('6')">6</div>
+      <div class="tecla" onclick="pk('7')">7</div><div class="tecla" onclick="pk('8')">8</div><div class="tecla" onclick="pk('9')">9</div>
+      <div class="tecla tcan" onclick="fecharPin()">CANCELAR</div>
+      <div class="tecla" onclick="pk('0')">0</div>
+      <div class="tecla tdel" onclick="pkDel()">⌫</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESGATE -->
+<div class="ov" id="ov-resg">
+  <div class="pin-box">
+    <div class="pin-t">🎁 Autorizar Resgate</div>
+    <div class="pin-s">Gestor confirma com senha</div>
+    <div style="background:#0D0D0D;border-radius:10px;padding:14px;margin:12px 0;text-align:center;">
+      <div style="font-size:.78rem;color:var(--cz);">Prêmio:</div>
+      <div style="font-family:'Bebas Neue',cursive;font-size:1.4rem;color:var(--am);margin:3px 0;">1 Sub Smart Grátis</div>
+      <div style="font-size:.78rem;color:#AAA;">Desconta <span id="r-meta-n" style="color:var(--vm);font-weight:900;">10</span> pontos</div>
+    </div>
+    <div class="pin-dots" id="rdots"></div>
+    <div class="pin-err" id="rerr"></div>
+    <div class="teclado">
+      <div class="tecla" onclick="rk('1')">1</div><div class="tecla" onclick="rk('2')">2</div><div class="tecla" onclick="rk('3')">3</div>
+      <div class="tecla" onclick="rk('4')">4</div><div class="tecla" onclick="rk('5')">5</div><div class="tecla" onclick="rk('6')">6</div>
+      <div class="tecla" onclick="rk('7')">7</div><div class="tecla" onclick="rk('8')">8</div><div class="tecla" onclick="rk('9')">9</div>
+      <div class="tecla tcan" onclick="fecharResgate()">CANCELAR</div>
+      <div class="tecla" onclick="rk('0')">0</div>
+      <div class="tecla tdel" onclick="rkDel()">⌫</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG & DB
+// ═══════════════════════════════════════════
+const CNPJ_ROYS = '50324042000156';
+const PROXY = 'https://api.allorigins.win/get?url=';
+
+const DB = {
+  get cli(){ return JSON.parse(localStorage.getItem('rc')||'{}'); },
+  set cli(v){ localStorage.setItem('rc',JSON.stringify(v)); },
+  get trans(){ return JSON.parse(localStorage.getItem('rt')||'[]'); },
+  set trans(v){ localStorage.setItem('rt',JSON.stringify(v)); },
+  get nfes(){ return JSON.parse(localStorage.getItem('rn')||'[]'); },
+  set nfes(v){ localStorage.setItem('rn',JSON.stringify(v)); },
+  get cfg(){
+    return JSON.parse(localStorage.getItem('rcfg')||JSON.stringify({
+      meta:10, valorMin:15, horas:1, senha:'1234',
+      cnpj:CNPJ_ROYS, lojas:['Shopping da Ilha','Shopping São Luís']
+    }));
+  },
+  set cfg(v){ localStorage.setItem('rcfg',JSON.stringify(v)); }
+};
+
+// Demo seed
+(function(){
+  if(Object.keys(DB.cli).length) return;
+  DB.cli = {
+    '123.456.789-00':{nome:'Ana Beatriz',tel:'(98)98888-1111',pontos:8,visitas:8,ultima:'2026-02-24T19:51:13',loja:'Shopping da Ilha'},
+    '987.654.321-00':{nome:'Carlos Mendes',tel:'',pontos:3,visitas:3,ultima:'2026-02-20T13:10:00',loja:'Shopping São Luís'}
+  };
+})();
+
+// ═══════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════
+let cpfAtual='', nfeAtual=null, stream=null, qrLoop=null;
+let pinMode='', pinVal='', pinCb=null, rPinVal='';
+
+// ═══════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════
+function ir(tela){
+  document.querySelectorAll('.tela').forEach(t=>t.classList.remove('on'));
+  document.getElementById('tela-'+tela)?.classList.add('on');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  if(tela==='cliente') document.querySelectorAll('.nb')[0].classList.add('on');
+  if(tela==='gestor'){ document.querySelectorAll('.nb')[1].classList.add('on'); atualizarG(); }
+}
+function irGestor(){ ir('gestor-acesso'); }
+
+// ═══════════════════════════════════════════
+// STEP 1 — CPF
+// ═══════════════════════════════════════════
+function buscarCPF(){
+  const cpf = document.getElementById('cpf-in').value.trim();
+  if(!vCPF(cpf)){ al('al-cpf','❌ CPF inválido — verifique o formato.','err'); return; }
+  limAl('al-cpf');
+  cpfAtual = cpf;
+  const c = DB.cli[cpf];
+  if(c){ abrirQR(); }
+  else { hide('s-cpf'); show('s-cad'); }
+}
+function cadastrar(){
+  const nome = document.getElementById('cad-nome').value.trim();
+  if(!nome){ al('al-cad','❌ Nome obrigatório.','err'); return; }
+  const cli = DB.cli;
+  cli[cpfAtual] = {nome, tel:document.getElementById('cad-tel').value.trim(), pontos:0, visitas:0, ultima:null, loja:'—'};
+  DB.cli = cli;
+  hide('s-cad');
+  abrirQR();
+}
+
+// ═══════════════════════════════════════════
+// STEP 2 — QR CAMERA
+// ═══════════════════════════════════════════
+function abrirQR(){
+  ['s-cpf','s-cad','s-nota','s-res','s-loading'].forEach(hide);
+  show('s-qr'); limAl('al-qr');
+  iniciarCam();
+}
+async function iniciarCam(){
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const v = document.getElementById('qr-vid');
+    v.srcObject = stream; await v.play();
+    document.getElementById('qr-st').textContent = 'Aponte para o QR Code do cupom';
+    escanear();
+  } catch(e){
+    al('al-qr','❌ Câmera indisponível. Verifique as permissões do navegador.','err');
+  }
+}
+function escanear(){
+  const v=document.getElementById('qr-vid'), cv=document.getElementById('qr-cv'), ctx=cv.getContext('2d');
+  qrLoop = setInterval(()=>{
+    if(v.readyState!==v.HAVE_ENOUGH_DATA) return;
+    cv.width=v.videoWidth; cv.height=v.videoHeight;
+    ctx.drawImage(v,0,0,cv.width,cv.height);
+    const img=ctx.getImageData(0,0,cv.width,cv.height);
+    const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+    if(code?.data){ pararCam(); processarQR(code.data); }
+  },250);
+}
+function pararCam(){
+  clearInterval(qrLoop);
+  stream?.getTracks().forEach(t=>t.stop());
+  stream=null;
+}
+
+// ═══════════════════════════════════════════
+// STEP 2b — PROCESSAR E VALIDAR NFC-e
+// ═══════════════════════════════════════════
+function processarQR(url){
+  // Extrair chave 44 dígitos
+  const chave = (url.match(/(\d{44})/)||[])[1];
+  if(!chave){
+    show('s-qr'); al('al-qr','❌ QR Code não é de cupom fiscal válido.','err');
+    iniciarCam(); return;
+  }
+
+  // Verificar se já foi usado
+  if(DB.nfes.includes(chave)){
+    show('s-qr');
+    al('al-qr','❌ Este cupom já foi utilizado para pontuar. Cada cupom vale apenas uma vez.','err');
+    iniciarCam(); return;
+  }
+
+  // Verificar CNPJ na chave (pos 6-19)
+  const cnpjChave = chave.substring(6,20);
+  if(cnpjChave !== DB.cfg.cnpj){
+    show('s-qr');
+    al('al-qr',`❌ Cupom não é da Roy's (CNPJ: ${cnpjChave}). Use apenas cupons emitidos aqui.`,'err');
+    iniciarCam(); return;
+  }
+
+  // Mostrar loading e consultar SEFAZ
+  hide('s-qr'); show('s-loading');
+  consultarSEFAZ(chave, url);
+}
+
+async function consultarSEFAZ(chave, urlOriginal){
+  const sub = document.getElementById('load-sub');
+  sub.innerHTML = 'Consultando SEFAZ-MA...<br>Aguarde alguns segundos.';
+
+  try {
+    // Montar URL de consulta da SEFAZ-MA
+    // Extrair parâmetro p completo da URL original (inclui hash de autenticação)
+    let paramP = '';
+    try {
+      const u = new URL(urlOriginal);
+      paramP = u.searchParams.get('p') || '';
+    } catch(e){ paramP = ''; }
+
+    const sefazUrl = `http://www.nfce.sefaz.ma.gov.br/portal/consultarNFCe.jsp?p=${encodeURIComponent(paramP)}`;
+    const proxyUrl = PROXY + encodeURIComponent(sefazUrl);
+
+    sub.innerHTML = 'Aguardando resposta da SEFAZ-MA...<br>Verificando autenticidade do cupom.';
+
+    const resp = await fetch(proxyUrl, {signal: AbortSignal.timeout(12000)});
+    const json = await resp.json();
+    const html = json.contents || '';
+
+    // Extrair dhEmi do HTML retornado pela SEFAZ
+    // A SEFAZ-MA retorna uma página HTML com os dados da nota
+    const horaEmissao = extrairHoraSEFAZ(html, chave);
+
+    hide('s-loading');
+    renderizarNota(chave, urlOriginal, horaEmissao, html);
+
+  } catch(e) {
+    // Se SEFAZ offline ou timeout — fallback com dados da chave
+    console.warn('SEFAZ indisponível:', e.message);
+    hide('s-loading');
+    renderizarNotaFallback(chave, urlOriginal, e.message);
+  }
+}
+
+function extrairHoraSEFAZ(html, chave){
+  // Tentar extrair data/hora de emissão do HTML da SEFAZ
+  // Padrões comuns nas páginas de NFC-e da SEFAZ-MA:
+  // "Data de Emissão:" DD/MM/AAAA HH:MM:SS
+  // ou dentro de XML: <dhEmi>2026-02-24T19:51:09</dhEmi>
+
+  // Tentar formato ISO no HTML
+  let m = html.match(/(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/);
+  if(m) return new Date(m[1]);
+
+  // Tentar formato BR "DD/MM/AAAA HH:MM:SS"
+  m = html.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+  if(m) return new Date(`${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}:${m[6]}`);
+
+  // Tentar dhEmi no XML
+  m = html.match(/<dhEmi>([^<]+)<\/dhEmi>/);
+  if(m) return new Date(m[1]);
+
+  // Extrair da chave: posição 2-3 = AA, 4-5 = MM (sem dia/hora)
+  // Neste caso retornamos null — será tratado como fallback
+  return null;
+}
+
+function renderizarNota(chave, url, horaEmissao, htmlSefaz){
+  const cfg = DB.cfg;
+  const agora = new Date();
+  const erros = [];
+  const avisos = [];
+
+  // CNPJ (já validado antes, mas confirmar)
+  const cnpjChave = chave.substring(6,20);
+  const cnpjOk = cnpjChave === cfg.cnpj;
+
+  // VALIDAÇÃO PRINCIPAL: hora de emissão
+  let horaStr = '—', deltaMin = null, horaOk = false, horaLabel = '';
+
+  if(horaEmissao && !isNaN(horaEmissao.getTime())){
+    deltaMin = Math.round((agora - horaEmissao) / 60000);
+    const deltaH = Math.floor(Math.abs(deltaMin)/60);
+    const deltaM = Math.abs(deltaMin)%60;
+    horaStr = horaEmissao.toLocaleString('pt-BR');
+    horaLabel = deltaMin < 0
+      ? `⚠️ Cupom do futuro (+${deltaH}h${deltaM}m)`
+      : deltaMin <= cfg.horas * 60
+        ? `✅ ${deltaH>0?deltaH+'h ':''}${deltaM}min atrás — dentro da janela`
+        : `❌ ${deltaH>0?deltaH+'h ':''}${deltaM}min atrás — fora da janela de ${cfg.horas}h`;
+
+    if(deltaMin < 0 || deltaMin > cfg.horas * 60){
+      erros.push(deltaMin < 0
+        ? 'Cupom com data futura — inválido'
+        : `Cupom emitido há mais de ${cfg.horas} hora(s). Pontue logo após a compra.`);
+    } else {
+      horaOk = true;
+    }
+  } else {
+    // SEFAZ retornou mas não encontramos a hora — pode ser layout diferente
+    avisos.push('Não foi possível extrair a hora exata da SEFAZ. Solicite confirmação manual do gestor.');
+    horaStr = 'Não extraída';
+    horaLabel = '⚠️ Verificação manual necessária';
+  }
+
+  // Chave já usada (double-check)
+  if(DB.nfes.includes(chave)) erros.push('Cupom já utilizado anteriormente');
+
+  // Montar preview
+  const chaveF = chave.replace(/(\d{4})/g,'$1 ').trim();
+  document.getElementById('nfe-dados').innerHTML = `
+    <div class="nfe-r"><span class="k">CNPJ emitente</span><span class="v">${cnpjOk?'<span class="bok">✅ Roy\'s confirmado</span>':'<span class="berr">❌ '+cnpjChave+'</span>'}</span></div>
+    <div class="nfe-r"><span class="k">Fonte de validação</span><span class="v"><span class="bok">✅ SEFAZ-MA consultada</span></span></div>
+    <div class="nfe-r"><span class="k">Data/hora do cupom</span><span class="v">${horaStr}</span></div>
+    <div class="nfe-r"><span class="k">Tempo desde emissão</span><span class="v">${deltaMin!==null?(deltaMin<0?'—':Math.floor(deltaMin/60)+'h '+deltaMin%60+'min'):'—'}</span></div>
+    <div class="nfe-r"><span class="k">Janela permitida</span><span class="v">${cfg.horas} hora(s)</span></div>
+    <div class="nfe-r"><span class="k">Status temporal</span><span class="v">${horaLabel||'—'}</span></div>
+    <div class="nfe-r"><span class="k">Uso anterior</span><span class="v">${DB.nfes.includes(chave)?'<span class="berr">❌ Já utilizado</span>':'<span class="bok">✅ Primeira vez</span>'}</span></div>
+    <div class="nfe-r"><span class="k">Chave NF-e</span><span class="v" style="font-size:.68rem;font-family:monospace;word-break:break-all;">${chaveF}</span></div>
+  `;
+
+  nfeAtual = {chave, url, horaEmissao, deltaMin, erros, avisos, cnpjOk, horaOk};
+
+  const btn = document.getElementById('btn-pontuar');
+  if(erros.length > 0){
+    al('al-nota','❌ '+erros[0],'err');
+    btn.disabled=true; btn.style.opacity='.4';
+  } else if(avisos.length > 0){
+    al('al-nota','⚠️ '+avisos[0]+' — Gestor pode autorizar manualmente.','info');
+    btn.disabled=false; btn.style.opacity='1';
+  } else {
+    al('al-nota','✅ Cupom Roy\'s válido e dentro da janela de '+cfg.horas+'h. Pode pontuar!','ok');
+    btn.disabled=false; btn.style.opacity='1';
+  }
+  show('s-nota');
+}
+
+function renderizarNotaFallback(chave, url, motivo){
+  // SEFAZ offline: validar só o que conseguimos da chave
+  const cfg = DB.cfg;
+  const cnpjChave = chave.substring(6,20);
+  const cnpjOk = cnpjChave === cfg.cnpj;
+  const jaUsado = DB.nfes.includes(chave);
+
+  // Extrair AAMM da chave para verificação básica de mês
+  const aa = '20'+chave.substring(2,4);
+  const mm = chave.substring(4,6);
+  const agora = new Date();
+  const mesOk = parseInt(aa)===agora.getFullYear() && parseInt(mm)===(agora.getMonth()+1);
+
+  document.getElementById('nfe-dados').innerHTML = `
+    <div class="nfe-r"><span class="k">CNPJ emitente</span><span class="v">${cnpjOk?'<span class="bok">✅ Roy\'s</span>':'<span class="berr">❌ Inválido</span>'}</span></div>
+    <div class="nfe-r"><span class="k">Fonte de validação</span><span class="v"><span class="bwarn">⚠️ SEFAZ offline — validação parcial</span></span></div>
+    <div class="nfe-r"><span class="k">Mês/Ano do cupom</span><span class="v">${mesOk?'<span class="bok">✅ '+mm+'/'+aa+'</span>':'<span class="berr">❌ Mês incorreto</span>'}</span></div>
+    <div class="nfe-r"><span class="k">Hora exata</span><span class="v"><span class="bwarn">⚠️ Não verificável (SEFAZ fora)</span></span></div>
+    <div class="nfe-r"><span class="k">Uso anterior</span><span class="v">${jaUsado?'<span class="berr">❌ Já utilizado</span>':'<span class="bok">✅ Primeira vez</span>'}</span></div>
+    <div class="nfe-r"><span class="k">Chave NF-e</span><span class="v" style="font-size:.68rem;font-family:monospace;word-break:break-all;">${chave.replace(/(\d{4})/g,'$1 ').trim()}</span></div>
+  `;
+
+  const erros = [];
+  if(!cnpjOk) erros.push('CNPJ não é da Roy\'s');
+  if(jaUsado) erros.push('Cupom já utilizado');
+  if(!mesOk) erros.push('Cupom de mês incorreto');
+
+  nfeAtual = {chave, url, horaEmissao:null, deltaMin:null, erros, avisos:[], cnpjOk, horaOk:false, sefazOffline:true};
+
+  const btn = document.getElementById('btn-pontuar');
+  if(erros.length > 0){
+    al('al-nota','❌ '+erros[0],'err');
+    btn.disabled=true; btn.style.opacity='.4';
+  } else {
+    al('al-nota','⚠️ SEFAZ-MA indisponível agora. A hora do cupom não pôde ser verificada. Gestor deve confirmar fisicamente o cupom antes de autorizar.','info');
+    btn.disabled=false; btn.style.opacity='1';
+  }
+  show('s-nota');
+}
+
+function recusar(){ nfeAtual=null; hide('s-nota'); abrirQR(); }
+
+// ═══════════════════════════════════════════
+// STEP 3 — CONFIRMAR PONTUAÇÃO
+// ═══════════════════════════════════════════
+function confirmarPts(){
+  if(!nfeAtual || nfeAtual.erros.length>0) return;
+  const cfg = DB.cfg;
+
+  // Marcar chave como usada
+  const nfes = DB.nfes;
+  nfes.push(nfeAtual.chave);
+  DB.nfes = nfes;
+
+  // Atualizar cliente
+  const cli = DB.cli;
+  const c = cli[cpfAtual];
+  c.pontos += 1;
+  c.visitas += 1;
+  c.ultima = new Date().toISOString();
+  c.loja = cfg.lojas[0];
+  cli[cpfAtual] = c;
+  DB.cli = cli;
+
+  // Log de transação com todos os dados de auditoria
+  const trans = DB.trans;
+  trans.unshift({
+    id:'t'+Date.now(),
+    cpf:cpfAtual, nome:c.nome,
+    chave:nfeAtual.chave,
+    horaEmissao: nfeAtual.horaEmissao ? nfeAtual.horaEmissao.toISOString() : null,
+    deltaMin: nfeAtual.deltaMin,
+    sefazOffline: nfeAtual.sefazOffline||false,
+    pts:1, loja:c.loja,
+    data:new Date().toISOString(),
+    tipo:'compra'
+  });
+  DB.trans = trans;
+
+  hide('s-nota');
+  mostrarResultado(cpfAtual, true);
+}
+
+// ═══════════════════════════════════════════
+// STEP 4 — RESULTADO
+// ═══════════════════════════════════════════
+function mostrarResultado(cpf, novo=false){
+  const c = DB.cli[cpf];
+  const cfg = DB.cfg;
+  ['s-cpf','s-qr','s-nota','s-cad','s-loading'].forEach(hide);
+  show('s-res');
+
+  document.getElementById('r-nome').textContent = '👑 '+c.nome;
+  document.getElementById('r-pts').textContent = c.pontos;
+
+  const ciclo = c.pontos%cfg.meta || (c.pontos>0&&c.pontos%cfg.meta===0?cfg.meta:0);
+  const prog = c.pontos>=cfg.meta&&c.pontos%cfg.meta===0?cfg.meta:c.pontos%cfg.meta;
+  const pct = Math.min((prog/cfg.meta)*100,100);
+  document.getElementById('r-bar').style.width=pct+'%';
+  document.getElementById('r-ptxt').textContent=prog+'/'+cfg.meta;
+
+  const box=document.getElementById('r-cor');
+  box.innerHTML='';
+  for(let i=1;i<=cfg.meta;i++){
+    const s=document.createElement('span');
+    s.className='coroa'+(i<=prog?' on':'');
+    s.textContent='👑'; box.appendChild(s);
+  }
+
+  document.getElementById('r-resg').style.display=c.pontos>=cfg.meta?'block':'none';
+  document.getElementById('r-meta-n').textContent=cfg.meta;
+
+  const hist=DB.trans.filter(t=>t.cpf===cpf).slice(0,6);
+  document.getElementById('r-hist').innerHTML=hist.length?hist.map(t=>`
+    <div class="hi">
+      <div>
+        <div class="hi-loja">${t.tipo==='resgate'?'🎁 Prêmio':'🧾 '+t.loja}</div>
+        <div class="hi-data">${fmtD(t.data)}${t.deltaMin!=null?' · cupom: '+Math.floor(t.deltaMin/60)+'h'+t.deltaMin%60+'min antes':''}</div>
+      </div>
+      <div class="hi-pts ${t.pts>0?'pos':'neg'}">${t.pts>0?'+':''}${t.pts} pt${Math.abs(t.pts)!==1?'s':''}</div>
+    </div>
+  `).join(''):'<div style="color:#444;font-size:.82rem;padding:8px;">Nenhuma visita ainda.</div>';
+
+  if(novo){ const el=document.getElementById('r-pts'); el.style.color='var(--vd)'; setTimeout(()=>el.style.color='var(--am)',1400); }
+}
+
+function sair(){ cpfAtual=''; nfeAtual=null; ['s-res','s-nota','s-qr','s-cad','s-loading'].forEach(hide); show('s-cpf'); document.getElementById('cpf-in').value=''; limAl('al-cpf'); }
+
+// ═══════════════════════════════════════════
+// RESGATE
+// ═══════════════════════════════════════════
+function abrirResgate(){ rPinVal=''; atuRD(); document.getElementById('rerr').textContent=''; document.getElementById('ov-resg').classList.add('on'); }
+function fecharResgate(){ rPinVal=''; document.getElementById('ov-resg').classList.remove('on'); }
+function rk(d){ if(rPinVal.length>=8)return; rPinVal+=d; atuRD(); if(rPinVal.length===DB.cfg.senha.length)vrPin(); }
+function rkDel(){ rPinVal=rPinVal.slice(0,-1); atuRD(); }
+function atuRD(){ const l=DB.cfg.senha.length; document.getElementById('rdots').innerHTML=Array.from({length:l},(_,i)=>`<div class="pd ${i<rPinVal.length?'on':''}"></div>`).join(''); }
+function vrPin(){
+  if(rPinVal!==DB.cfg.senha){ document.getElementById('rerr').textContent='❌ Senha incorreta'; rPinVal=''; atuRD(); return; }
+  const cli=DB.cli, c=cli[cpfAtual], cfg=DB.cfg;
+  if(c.pontos<cfg.meta){ document.getElementById('rerr').textContent='❌ Pontos insuficientes'; return; }
+  c.pontos-=cfg.meta; cli[cpfAtual]=c; DB.cli=cli;
+  const tr=DB.trans; tr.unshift({id:'t'+Date.now(),cpf:cpfAtual,nome:c.nome,chave:'RESGATE',horaEmissao:null,deltaMin:null,pts:-cfg.meta,loja:c.loja,data:new Date().toISOString(),tipo:'resgate'}); DB.trans=tr;
+  fecharResgate(); mostrarResultado(cpfAtual);
+}
+
+// ═══════════════════════════════════════════
+// PIN GESTOR
+// ═══════════════════════════════════════════
+function abrirPin(modo,cb=null,titulo='🔐 Senha do Gestor',sub='Digite sua senha'){
+  pinMode=modo; pinCb=cb; pinVal='';
+  document.getElementById('pin-t').textContent=titulo;
+  document.getElementById('pin-s').textContent=sub;
+  document.getElementById('pin-err').textContent='';
+  atuDots();
+  document.getElementById('ov-pin').classList.add('on');
+}
+function fecharPin(){ pinVal=''; document.getElementById('ov-pin').classList.remove('on'); }
+function pk(d){ if(pinVal.length>=8)return; pinVal+=d; atuDots(); if(pinVal.length===DB.cfg.senha.length)vPin(); }
+function pkDel(){ pinVal=pinVal.slice(0,-1); atuDots(); }
+function atuDots(){ const l=DB.cfg.senha.length; document.getElementById('pin-dots').innerHTML=Array.from({length:l},(_,i)=>`<div class="pd ${i<pinVal.length?'on':''}"></div>`).join(''); }
+function vPin(){
+  if(pinVal!==DB.cfg.senha){ document.getElementById('pin-err').textContent='❌ Senha incorreta'; pinVal=''; atuDots(); return; }
+  fecharPin();
+  if(pinMode==='gestor') ir('gestor');
+  else if(pinMode==='ajuste'&&pinCb) pinCb();
+}
+
+// ═══════════════════════════════════════════
+// PAINEL GESTOR
+// ═══════════════════════════════════════════
+function atualizarG(){
+  const t=DB.trans;
+  document.getElementById('st-c').textContent=Object.keys(DB.cli).length;
+  document.getElementById('st-t').textContent=t.filter(x=>x.tipo==='compra').length;
+  document.getElementById('st-r').textContent=t.filter(x=>x.tipo==='resgate').length;
+  renderCli(); renderTrans(); carregarCfg();
+}
+function tabG(aba){
+  ['cli','trans','ajuste','cfg'].forEach(a=>{ document.getElementById('tab-'+a).style.display=a===aba?'block':'none'; });
+  document.querySelectorAll('.tg').forEach((b,i)=>b.classList.toggle('on',['cli','trans','ajuste','cfg'][i]===aba));
+}
+function renderCli(){
+  const cli=DB.cli, cfg=DB.cfg;
+  const fn=(document.getElementById('f-nome')?.value||'').toLowerCase();
+  const fl=document.getElementById('f-loja')?.value||'';
+  const rows=Object.entries(cli).filter(([cpf,c])=>(c.nome.toLowerCase().includes(fn)||cpf.includes(fn))&&(!fl||c.loja===fl));
+  document.getElementById('tb-cli').innerHTML=rows.map(([cpf,c])=>{
+    const bc=c.pontos>=cfg.meta?'br3':c.pontos>=cfg.meta*.6?'by2':'bg2';
+    return `<tr>
+      <td style="font-weight:800;color:#FFF">${c.nome}</td>
+      <td style="font-family:monospace;color:#666;font-size:.78rem">${cpf}</td>
+      <td><span class="badge ${bc}">${c.pontos>=cfg.meta?'🎁 Prêmio!':c.pontos+' pts'}</span></td>
+      <td>${c.visitas}</td>
+      <td>${c.ultima?fmtD(c.ultima):'—'}</td>
+      <td><span class="badge bb2">${c.loja}</span></td>
+      <td><button class="btn bg bsm" onclick="verCli('${cpf}')">Ver</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:#444;padding:20px">Sem clientes</td></tr>';
+}
+function verCli(cpf){ ir('cliente'); cpfAtual=cpf; mostrarResultado(cpf); }
+function renderTrans(){
+  const trans=DB.trans.slice(0,80);
+  document.getElementById('tb-trans').innerHTML=trans.map(t=>{
+    const delta=t.deltaMin!=null?(t.deltaMin<60?t.deltaMin+'min':Math.floor(t.deltaMin/60)+'h'+t.deltaMin%60+'m'):'—';
+    const stOff=t.sefazOffline?'<span class="badge by2">⚠️ offline</span>':'<span class="badge bg2">✅ SEFAZ</span>';
+    return `<tr>
+      <td style="font-size:.75rem;color:#666">${fmtD(t.data)}</td>
+      <td style="font-weight:700">${t.nome}</td>
+      <td style="font-family:monospace;font-size:.65rem;color:#555">${t.chave?.substring(0,16)}...</td>
+      <td style="font-size:.75rem">${t.horaEmissao?fmtD(t.horaEmissao):'—'}</td>
+      <td>${delta} ${t.tipo==='compra'?stOff:''}</td>
+      <td style="color:${t.pts>0?'var(--vd)':'var(--vm)'};font-weight:900">${t.pts>0?'+':''}${t.pts}</td>
+      <td><span class="badge bb2">${t.loja}</span></td>
+      <td><span class="badge ${t.tipo==='compra'?'bg2':t.tipo==='resgate'?'br3':'by2'}">${t.tipo}</span></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="8" style="text-align:center;color:#444;padding:20px">Sem transações</td></tr>';
+}
+function aplicarAjuste(){
+  const cpf=document.getElementById('aj-cpf').value.trim();
+  const pts=parseInt(document.getElementById('aj-pts').value);
+  const mot=document.getElementById('aj-mot').value.trim();
+  limAl('al-aj');
+  if(!vCPF(cpf)){al('al-aj','❌ CPF inválido.','err');return;}
+  if(!pts||isNaN(pts)){al('al-aj','❌ Informe os pontos.','err');return;}
+  if(!mot){al('al-aj','❌ Motivo obrigatório.','err');return;}
+  const cli=DB.cli;
+  if(!cli[cpf]){al('al-aj','❌ CPF não cadastrado.','err');return;}
+  abrirPin('ajuste',()=>{
+    cli[cpf].pontos=Math.max(0,cli[cpf].pontos+pts); DB.cli=cli;
+    const tr=DB.trans; tr.unshift({id:'t'+Date.now(),cpf,nome:cli[cpf].nome,chave:'AJUSTE',horaEmissao:null,deltaMin:null,pts,loja:'—',data:new Date().toISOString(),tipo:'ajuste',motivo:mot}); DB.trans=tr;
+    al('al-aj',`✅ Ajuste aplicado. ${cli[cpf].nome} agora tem ${cli[cpf].pontos} pts.`,'ok');
+    atualizarG();
+  },'⚙️ Confirmar Ajuste','Senha para auditoria');
+}
+function carregarCfg(){
+  const cfg=DB.cfg;
+  document.getElementById('cfg-h').value=cfg.horas||1;
+  document.getElementById('cfg-m').value=cfg.meta;
+  document.getElementById('cfg-v').value=cfg.valorMin;
+  if(cfg.lojas){ document.getElementById('cfg-l1').value=cfg.lojas[0]; document.getElementById('cfg-l2').value=cfg.lojas[1]; }
+}
+function salvarCfg(){
+  const cfg=DB.cfg;
+  cfg.horas=parseInt(document.getElementById('cfg-h').value)||1;
+  cfg.meta=parseInt(document.getElementById('cfg-m').value)||10;
+  cfg.valorMin=parseFloat(document.getElementById('cfg-v').value)||15;
+  cfg.lojas=[document.getElementById('cfg-l1').value, document.getElementById('cfg-l2').value];
+  const ns=document.getElementById('cfg-pw').value;
+  if(ns){ if(ns.length<4){al('al-cfg','❌ Senha muito curta.','err');return;} cfg.senha=ns; document.getElementById('cfg-pw').value=''; }
+  DB.cfg=cfg;
+  al('al-cfg','✅ Configurações salvas!','ok');
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function show(id){ document.getElementById(id).style.display='block'; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+function vCPF(v){ return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(v); }
+function mkCPF(el){ let v=el.value.replace(/\D/g,'').slice(0,11); if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4'); else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3'); else if(v.length>3)v=v.replace(/(\d{3})(\d{0,3})/,'$1.$2'); el.value=v; }
+function mkTel(el){ let v=el.value.replace(/\D/g,'').slice(0,11); if(v.length>10)v=v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3'); else if(v.length>6)v=v.replace(/(\d{2})(\d{4,5})(\d{0,4})/,'($1) $2-$3'); else if(v.length>2)v=v.replace(/(\d{2})(\d{0,5})/,'($1) $2'); el.value=v; }
+function fmtD(iso){ if(!iso)return '—'; const d=new Date(iso); return d.toLocaleDateString('pt-BR')+(iso.includes('T')?' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''); }
+function al(id,msg,tipo){ const el=document.getElementById(id); if(!el)return; el.textContent=msg; el.className='al '+tipo; setTimeout(()=>{ if(el.textContent===msg)el.className='al'; },7000); }
+function limAl(id){ const el=document.getElementById(id); if(el)el.className='al'; }
+</script>
+</body>
+</html>
