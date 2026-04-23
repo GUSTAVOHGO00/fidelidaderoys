@@ -209,23 +209,33 @@ body{font-family:'Nunito',sans-serif;background:var(--pr);min-height:100vh;color
     <button class="btn bg" onclick="hide('s-cad');show('s-cpf')">Voltar</button>
   </div>
 
-  <!-- STEP 2: QR SCANNER -->
+  <!-- STEP 2: QR FOTO -->
   <div class="card" id="s-qr" style="display:none">
-    <div class="ct">📷 Escanear Cupom</div>
-    <div class="cs">Aponte para o QR Code do seu cupom fiscal Roy's</div>
+    <div class="ct">📷 Fotografar Cupom</div>
+    <div class="cs">Tire uma foto nítida do QR Code do seu cupom Roy's</div>
     <div class="steps">
       <div class="step done">1. Identificação</div>
       <div class="step on">2. Cupom</div>
       <div class="step">3. Pontos</div>
     </div>
-    <div class="qr-wrap">
-      <video id="qr-vid" playsinline muted></video>
-      <div class="qr-mira"><div class="qr-mi"><div class="scan-line"></div></div></div>
-      <div class="qr-st" id="qr-st">Buscando QR Code...</div>
+
+    <div id="qr-instrucao" style="border:2px dashed var(--am);border-radius:16px;padding:28px 20px;text-align:center;background:#0D0D0D;margin-bottom:4px;">
+      <div style="font-size:2.8rem;margin-bottom:10px;">🧾</div>
+      <div style="font-family:'Bebas Neue',cursive;font-size:1.15rem;color:var(--am);letter-spacing:1px;margin-bottom:6px;">COMO FOTOGRAFAR</div>
+      <div style="font-size:0.8rem;color:var(--cz);line-height:1.6;">
+        1. Deixe o cupom <strong style="color:#CCC">plano sobre o balcão</strong><br>
+        2. Fotografe <strong style="color:#CCC">só o QR Code</strong>, centralizado<br>
+        3. Boa iluminação = leitura instantânea
+      </div>
     </div>
-    <canvas id="qr-cv" style="display:none"></canvas>
-    <div id="al-qr" class="al" style="margin-top:12px;"></div>
-    <button class="btn bg" style="margin-top:12px;" onclick="pararCam();hide('s-qr');show('s-cpf')">← Voltar</button>
+
+    <canvas id="qr-cv" style="display:none;width:100%;border-radius:12px;border:2px solid var(--am);margin-bottom:4px;"></canvas>
+
+    <input type="file" id="qr-input" accept="image/*" capture="environment" style="display:none" onchange="lerFoto(this)"/>
+
+    <div id="al-qr" class="al"></div>
+    <button class="btn by" onclick="document.getElementById('qr-input').click()">📸 ABRIR CÂMERA E FOTOGRAFAR</button>
+    <button class="btn bg" onclick="hide('s-qr');show('s-cpf');limAl('al-qr');resetFoto()">← Voltar</button>
   </div>
 
   <!-- STEP 2b: VALIDANDO (loading) -->
@@ -496,131 +506,105 @@ function cadastrar(){
 }
 
 // ═══════════════════════════════════════════
-// STEP 2 — QR CAMERA
+// STEP 2 — FOTO DO CUPOM (câmera nativa)
 // ═══════════════════════════════════════════
 function abrirQR(){
   ['s-cpf','s-cad','s-nota','s-res','s-loading'].forEach(hide);
   show('s-qr'); limAl('al-qr');
-  iniciarCam();
+  resetFoto();
 }
 
-async function iniciarCam(){
-  try {
-    // Configurações otimizadas para leitura de QR Code em papel impresso
-    const constraints = {
-      video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        focusMode: { ideal: 'continuous' },
-        zoom: { ideal: 1 }
-      }
-    };
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
-    const v = document.getElementById('qr-vid');
-    v.srcObject = stream;
-    await v.play();
-
-    // Tentar forçar foco contínuo na track
-    try {
-      const track = stream.getVideoTracks()[0];
-      await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-    } catch(e){ /* não suportado em todos os devices */ }
-
-    document.getElementById('qr-st').textContent = 'Aponte para o QR Code do cupom';
-
-    // Escolher melhor método de leitura disponível
-    if('BarcodeDetector' in window){
-      escanearNativo();
-    } else {
-      escanearJsQR();
-    }
-  } catch(e){
-    al('al-qr','❌ Câmera indisponível. Verifique as permissões do navegador.','err');
-  }
-}
-
-// MÉTODO 1: BarcodeDetector nativo (iPhone Safari 17+, Chrome Android)
-// Usa o hardware do dispositivo — muito mais rápido e confiável
-async function escanearNativo(){
-  const detector = new BarcodeDetector({ formats: ['qr_code'] });
-  const v = document.getElementById('qr-vid');
-  const st = document.getElementById('qr-st');
-  st.textContent = '📷 Câmera nativa ativa — aponte para o QR Code';
-
-  async function tick(){
-    if(!stream) return; // câmera foi parada
-    try {
-      const codes = await detector.detect(v);
-      if(codes.length > 0){
-        pararCam();
-        processarQR(codes[0].rawValue);
-        return;
-      }
-    } catch(e){ /* frame não processável, continuar */ }
-    qrLoop = requestAnimationFrame(tick);
-  }
-  qrLoop = requestAnimationFrame(tick);
-}
-
-// MÉTODO 2: jsQR com configurações otimizadas (fallback)
-function escanearJsQR(){
-  const v = document.getElementById('qr-vid');
+function resetFoto(){
   const cv = document.getElementById('qr-cv');
-  const ctx = cv.getContext('2d', { willReadFrequently: true });
-  const st = document.getElementById('qr-st');
-  st.textContent = 'Aponte o QR Code para o centro da moldura';
-
-  let tentativas = 0;
-  qrLoop = setInterval(()=>{
-    if(!stream || v.readyState !== v.HAVE_ENOUGH_DATA) return;
-
-    cv.width = v.videoWidth;
-    cv.height = v.videoHeight;
-    ctx.drawImage(v, 0, 0, cv.width, cv.height);
-
-    // Tentar leitura normal
-    let img = ctx.getImageData(0, 0, cv.width, cv.height);
-    let code = jsQR(img.data, img.width, img.height, {
-      inversionAttempts: 'attemptBoth' // tenta normal e invertido
-    });
-
-    // Se não leu, tentar com recorte central (onde está a moldura)
-    if(!code && cv.width > 0){
-      const margin = Math.floor(cv.width * 0.15);
-      const size = cv.width - margin * 2;
-      img = ctx.getImageData(margin, margin, size, size);
-      code = jsQR(img.data, img.width, img.height, {
-        inversionAttempts: 'attemptBoth'
-      });
-    }
-
-    if(code?.data){
-      pararCam();
-      processarQR(code.data);
-      return;
-    }
-
-    // Feedback visual de progresso
-    tentativas++;
-    if(tentativas % 20 === 0){
-      st.textContent = tentativas < 60
-        ? 'Buscando QR Code... Centralize o código na moldura'
-        : 'Aproxime mais o cupom e mantenha firme';
-    }
-  }, 150); // 150ms = ~6fps — mais lento que antes mas mais preciso por frame
+  cv.style.display = 'none';
+  document.getElementById('qr-instrucao').style.display = 'block';
+  // Resetar input para permitir mesma foto novamente
+  const inp = document.getElementById('qr-input');
+  inp.value = '';
 }
 
-function pararCam(){
-  // BarcodeDetector usa requestAnimationFrame
-  if(typeof qrLoop === 'number' && qrLoop < 1e9){
-    cancelAnimationFrame(qrLoop);
-  } else {
-    clearInterval(qrLoop);
+function lerFoto(input){
+  if(!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  limAl('al-qr');
+  al('al-qr','⏳ Lendo QR Code da foto...','info');
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+
+    const cv = document.getElementById('qr-cv');
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+
+    // Mostrar preview da foto
+    cv.width = img.width;
+    cv.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    document.getElementById('qr-instrucao').style.display = 'none';
+    cv.style.display = 'block';
+
+    // Tentar ler QR Code em múltiplas estratégias
+    const resultado = tentarLerQR(ctx, cv.width, cv.height);
+
+    if(resultado){
+      limAl('al-qr');
+      hide('s-qr');
+      processarQR(resultado);
+    } else {
+      al('al-qr','❌ QR Code não encontrado na foto. Tente novamente: foto mais próxima, boa iluminação, cupom plano.','err');
+      // Permitir nova tentativa
+      document.getElementById('qr-input').value = '';
+    }
+  };
+  img.onerror = () => {
+    al('al-qr','❌ Erro ao carregar a foto. Tente novamente.','err');
+  };
+  img.src = url;
+}
+
+function tentarLerQR(ctx, w, h){
+  // Estratégia 1: imagem completa
+  let img = ctx.getImageData(0, 0, w, h);
+  let code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+  if(code?.data) return code.data;
+
+  // Estratégia 2: recorte central 70%
+  const mx = Math.floor(w * 0.15), my = Math.floor(h * 0.15);
+  const sw = Math.floor(w * 0.7), sh = Math.floor(h * 0.7);
+  img = ctx.getImageData(mx, my, sw, sh);
+  code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+  if(code?.data) return code.data;
+
+  // Estratégia 3: recorte central 50%
+  const mx2 = Math.floor(w * 0.25), my2 = Math.floor(h * 0.25);
+  const sw2 = Math.floor(w * 0.5), sh2 = Math.floor(h * 0.5);
+  img = ctx.getImageData(mx2, my2, sw2, sh2);
+  code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+  if(code?.data) return code.data;
+
+  // Estratégia 4: aumentar contraste e tentar de novo
+  img = ctx.getImageData(0, 0, w, h);
+  const contraste = aumentarContraste(img);
+  code = jsQR(contraste.data, contraste.width, contraste.height, { inversionAttempts: 'attemptBoth' });
+  if(code?.data) return code.data;
+
+  return null;
+}
+
+function aumentarContraste(imageData){
+  // Aumenta contraste aplicando threshold — preto ou branco
+  const d = new Uint8ClampedArray(imageData.data);
+  for(let i = 0; i < d.length; i += 4){
+    const avg = (d[i] + d[i+1] + d[i+2]) / 3;
+    const val = avg < 128 ? 0 : 255;
+    d[i] = d[i+1] = d[i+2] = val;
   }
-  stream?.getTracks().forEach(t=>t.stop());
-  stream = null;
+  return new ImageData(d, imageData.width, imageData.height);
 }
+
+// Mantido vazio para compatibilidade — não usamos mais stream de vídeo
+function pararCam(){ stream = null; }
 
 // ═══════════════════════════════════════════
 // STEP 2b — PROCESSAR E VALIDAR NFC-e
