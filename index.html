@@ -503,32 +503,123 @@ function abrirQR(){
   show('s-qr'); limAl('al-qr');
   iniciarCam();
 }
+
 async function iniciarCam(){
   try {
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    // Configurações otimizadas para leitura de QR Code em papel impresso
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        focusMode: { ideal: 'continuous' },
+        zoom: { ideal: 1 }
+      }
+    };
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
     const v = document.getElementById('qr-vid');
-    v.srcObject = stream; await v.play();
+    v.srcObject = stream;
+    await v.play();
+
+    // Tentar forçar foco contínuo na track
+    try {
+      const track = stream.getVideoTracks()[0];
+      await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+    } catch(e){ /* não suportado em todos os devices */ }
+
     document.getElementById('qr-st').textContent = 'Aponte para o QR Code do cupom';
-    escanear();
+
+    // Escolher melhor método de leitura disponível
+    if('BarcodeDetector' in window){
+      escanearNativo();
+    } else {
+      escanearJsQR();
+    }
   } catch(e){
     al('al-qr','❌ Câmera indisponível. Verifique as permissões do navegador.','err');
   }
 }
-function escanear(){
-  const v=document.getElementById('qr-vid'), cv=document.getElementById('qr-cv'), ctx=cv.getContext('2d');
-  qrLoop = setInterval(()=>{
-    if(v.readyState!==v.HAVE_ENOUGH_DATA) return;
-    cv.width=v.videoWidth; cv.height=v.videoHeight;
-    ctx.drawImage(v,0,0,cv.width,cv.height);
-    const img=ctx.getImageData(0,0,cv.width,cv.height);
-    const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
-    if(code?.data){ pararCam(); processarQR(code.data); }
-  },250);
+
+// MÉTODO 1: BarcodeDetector nativo (iPhone Safari 17+, Chrome Android)
+// Usa o hardware do dispositivo — muito mais rápido e confiável
+async function escanearNativo(){
+  const detector = new BarcodeDetector({ formats: ['qr_code'] });
+  const v = document.getElementById('qr-vid');
+  const st = document.getElementById('qr-st');
+  st.textContent = '📷 Câmera nativa ativa — aponte para o QR Code';
+
+  async function tick(){
+    if(!stream) return; // câmera foi parada
+    try {
+      const codes = await detector.detect(v);
+      if(codes.length > 0){
+        pararCam();
+        processarQR(codes[0].rawValue);
+        return;
+      }
+    } catch(e){ /* frame não processável, continuar */ }
+    qrLoop = requestAnimationFrame(tick);
+  }
+  qrLoop = requestAnimationFrame(tick);
 }
+
+// MÉTODO 2: jsQR com configurações otimizadas (fallback)
+function escanearJsQR(){
+  const v = document.getElementById('qr-vid');
+  const cv = document.getElementById('qr-cv');
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  const st = document.getElementById('qr-st');
+  st.textContent = 'Aponte o QR Code para o centro da moldura';
+
+  let tentativas = 0;
+  qrLoop = setInterval(()=>{
+    if(!stream || v.readyState !== v.HAVE_ENOUGH_DATA) return;
+
+    cv.width = v.videoWidth;
+    cv.height = v.videoHeight;
+    ctx.drawImage(v, 0, 0, cv.width, cv.height);
+
+    // Tentar leitura normal
+    let img = ctx.getImageData(0, 0, cv.width, cv.height);
+    let code = jsQR(img.data, img.width, img.height, {
+      inversionAttempts: 'attemptBoth' // tenta normal e invertido
+    });
+
+    // Se não leu, tentar com recorte central (onde está a moldura)
+    if(!code && cv.width > 0){
+      const margin = Math.floor(cv.width * 0.15);
+      const size = cv.width - margin * 2;
+      img = ctx.getImageData(margin, margin, size, size);
+      code = jsQR(img.data, img.width, img.height, {
+        inversionAttempts: 'attemptBoth'
+      });
+    }
+
+    if(code?.data){
+      pararCam();
+      processarQR(code.data);
+      return;
+    }
+
+    // Feedback visual de progresso
+    tentativas++;
+    if(tentativas % 20 === 0){
+      st.textContent = tentativas < 60
+        ? 'Buscando QR Code... Centralize o código na moldura'
+        : 'Aproxime mais o cupom e mantenha firme';
+    }
+  }, 150); // 150ms = ~6fps — mais lento que antes mas mais preciso por frame
+}
+
 function pararCam(){
-  clearInterval(qrLoop);
+  // BarcodeDetector usa requestAnimationFrame
+  if(typeof qrLoop === 'number' && qrLoop < 1e9){
+    cancelAnimationFrame(qrLoop);
+  } else {
+    clearInterval(qrLoop);
+  }
   stream?.getTracks().forEach(t=>t.stop());
-  stream=null;
+  stream = null;
 }
 
 // ═══════════════════════════════════════════
